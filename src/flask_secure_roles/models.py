@@ -1,3 +1,4 @@
+import typing as t
 from sqlalchemy import (
     Column,
     Integer,
@@ -40,6 +41,29 @@ class UserMixin:
         User ID of the user
         """
         return str(self.fsr_user_id)
+
+    def roles(self, project_id=None, project_name=None) -> t.List[str]:
+        """
+        Roles of the user in the project with id `project_id`
+
+        :param project_id: Project ID of the project whose roles are needed
+        :param project_name: Project name whose roles are needed
+        :return: List of the roles
+        :rtype: List[str]
+        """
+        roles_list = []
+        if project_id is None and project_name is None:
+            for user_role in self.fsr_roles:
+                roles_list.append(str(user_role.fsr_role.name()))
+        elif project_id is not None:
+            for user_role in self.fsr_roles:
+                if user_role.fsr_role.fsr_project_id == project_id:
+                    roles_list.append(str(user_role.fsr_role.name()))
+        elif project_name is not None:
+            for user_role in self.fsr_roles:
+                if user_role.fsr_role.fsr_project.name() == project_name:
+                    roles_list.append(str(user_role.fsr_role.name()))
+        return roles_list
 
 
 class RoleMixin:
@@ -85,10 +109,26 @@ class RoleMixin:
     def __table_args__(cls):
         return (UniqueConstraint("fsr_role_name", "fsr_project_id"),)
 
-
     def name(self) -> str:
         return str(self.fsr_role_name)
-    
+
+    def has_permission(self, project_name, permission_name) -> bool:
+        """
+        Checks if the role has `permission_name` permission in `project_name` project
+
+        :param project_name: Project name
+        :param permission_name: Permission name
+        :return: `True` if the role has permission in the project otherwise `False`
+        :rtype: bool
+        """
+        if self.fsr_project.fsr_project_name != project_name:
+            return False
+        for permission in self.fsr_permissions:
+            if permission.fsr_permission.name() == permission_name:
+                return True
+        return False
+
+
 class ProjectMixin:
     """
     Project Mixin for abstraction of various roles across various projects.
@@ -116,6 +156,7 @@ class ProjectMixin:
         """
         return str(self.fsr_project_name)
 
+
 class PermissionMixin:
     @declared_attr
     def fsr_permission_id(cls):
@@ -135,6 +176,7 @@ class PermissionMixin:
 
     def name(self) -> str:
         return str(self.fsr_permission_name)
+
 
 class UserRoleMixin:
     @declared_attr

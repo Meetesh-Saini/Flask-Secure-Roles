@@ -64,6 +64,7 @@ def test_projectmixin(db_session: scoped_session[Session]):
     projectname = "hello"
     rolename = "myrole"
     permissonname = "edit-blog"
+    permname = "view-blogs"
 
     # Create a user and project
     user = User()
@@ -125,4 +126,59 @@ def test_projectmixin(db_session: scoped_session[Session]):
     retrieved_userrole: UserRole = db_session.query(UserRole).first()
 
     assert retrieved_userrole.fsr_role.name() == rolename
-    assert retrieved_userrole.fsr_role.fsr_project_id == retrieved_project.fsr_project_id
+    assert (
+        retrieved_userrole.fsr_role.fsr_project_id == retrieved_project.fsr_project_id
+    )
+
+    perm = Permission(fsr_permission_name=permname)
+    db_session.add(perm)
+    db_session.commit()
+
+    retrieved_permission: Permission = (
+        db_session.query(Permission)
+        .filter(Permission.fsr_permission_name == perm.name())
+        .first()
+    )
+
+    role_mapped = RolePermission(
+        fsr_role_id=retrieved_role.fsr_role_id,
+        fsr_permission_id=retrieved_permission.fsr_permission_id,
+    )
+
+    db_session.add(role_mapped)
+    db_session.commit()
+
+    retrieved_role: Role = db_session.query(Role).first()
+
+    assert retrieved_role.fsr_permissions[0].fsr_permission.name() == permissonname
+    assert retrieved_role.fsr_permissions[1].fsr_permission.name() == permname
+
+
+def test_usermixin_roles_list(db_session: scoped_session[Session]):
+    # Retrive the user and project
+    retrieved_user = db_session.query(User).first()
+    retrieved_project: Project = db_session.query(Project).first()
+
+    assert retrieved_user.roles() == ["myrole"]
+    assert retrieved_user.roles(project_id=retrieved_project.fsr_project_id) == [
+        "myrole"
+    ]
+    assert retrieved_user.roles(project_name=retrieved_project.fsr_project_name) == [
+        "myrole"
+    ]
+    assert retrieved_user.roles(project_name="not-project") == []
+
+
+def test_rolemixin_has_permission(db_session: scoped_session[Session]):
+    # Retrive the role
+    retrieved_role: Role = db_session.query(Role).first()
+    retrieved_project: Project = db_session.query(Project).first()
+    retrieved_permission: Permission = db_session.query(Permission).first()
+
+    assert retrieved_role.has_permission(
+        retrieved_project.name(), retrieved_permission.name()
+    )
+
+    assert not retrieved_role.has_permission("not-project", retrieved_permission.name())
+
+    assert not retrieved_role.has_permission(retrieved_project.name(), "not-permission")

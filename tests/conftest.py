@@ -23,3 +23,8 @@ def db_session(app_instance):
         db.session.rollback()
         db.session.remove()
         db.drop_all()
+
+@pytest.fixture(scope="module")
+def client(app_instance : Flask):
+    with app_instance.test_client() as client:
+        yield client

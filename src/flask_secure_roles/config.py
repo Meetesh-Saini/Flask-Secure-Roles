@@ -37,7 +37,7 @@ class _Config:
         .. note::
             The default value is "cookie".
         """
-        return current_app.config.get("FSR_TOKEN_LOCATION", "cookie")
+        return current_app.config["FSR_TOKEN_LOCATION"]
 
     @property
     def fsr_models(
