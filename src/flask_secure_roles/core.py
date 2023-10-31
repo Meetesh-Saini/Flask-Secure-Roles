@@ -67,8 +67,12 @@ class FlaskSecureRoles:
         def decorator(f):
             @wraps(f)
             def decorated_function(*args, **kwargs):
-                # TODO: Implement the validation
                 valid = False
+                all_roles = current_user._get_current_object().roles(
+                    project_name=project
+                )
+                if all([role in all_roles for role in roles]):
+                    valid = True
                 if valid:
                     return f(*args, **kwargs)
                 else:

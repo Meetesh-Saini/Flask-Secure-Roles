@@ -4,7 +4,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 import pytest
 from sqlalchemy.orm import scoped_session, Session
-from .models import db, User
+from .models import db, User, Project, Role, UserRole
 
 
 def test_extension_load(app_instance: Flask):
@@ -79,3 +79,40 @@ def test_extension_current_user(
 
     assert resp.status_code == 200
     assert resp.data.decode("utf-8") == real_user.user_id()
+
+
+def test_required_roles(
+    app_instance: Flask, client: FlaskClient, db_session: scoped_session[Session]
+):
+    real_user = db_session.query(User).filter(User.name == "john").first()
+    fsr = app_instance.extensions["flask_secure_roles"]
+    # Set the user to john
+    fsr.user_loader(real_user)
+    resp = client.get("/role")
+
+    assert resp.status_code == 401
+
+    # Create the project
+    project = Project(fsr_project_name="hello")
+    db_session.add(project)
+    db_session.commit()
+    project: Project = (
+        db_session.query(Project).filter(Project.fsr_project_name == "hello").first()
+    )
+
+    # Create the role
+    role = Role(fsr_role_name="admin", fsr_project_id=project.fsr_project_id)
+    db_session.add(role)
+    db_session.commit()
+    role: Role = db_session.query(Role).filter(Role.fsr_role_name == "admin").first()
+
+    # Map user to role
+    userrole = UserRole(fsr_user_id=real_user.fsr_user_id, fsr_role_id=role.fsr_role_id)
+    db_session.add(userrole)
+    db_session.commit()
+
+    # Visit the route
+    resp = client.get("/role")
+
+    assert resp.status_code == 200
+    assert resp.data == b"works"

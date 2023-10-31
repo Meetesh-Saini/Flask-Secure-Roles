@@ -2,20 +2,33 @@
 import pytest
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_secure_roles import FlaskSecureRoles
 
 db = SQLAlchemy()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def app_instance():
     app = Flask(__name__)
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config["TESTING"] = True
+    app.config["DEBUG"] = False
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     db.init_app(app)
     from .models import User, Role, Permission, RolePermission, Project, UserRole
+
+    # Initialize the extension
+    fsr = FlaskSecureRoles(app)
+
+    # Define the route
+    @app.route("/role")
+    @fsr.required_roles("hello", ["admin"])
+    def roles_test():
+        return "works"
+
     return app
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def db_session(app_instance):
     with app_instance.app_context():
         db.create_all()
@@ -24,7 +37,8 @@ def db_session(app_instance):
         db.session.remove()
         db.drop_all()
 
+
 @pytest.fixture(scope="module")
-def client(app_instance : Flask):
+def client(app_instance: Flask):
     with app_instance.test_client() as client:
         yield client
