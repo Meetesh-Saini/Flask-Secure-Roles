@@ -59,9 +59,9 @@ class FlaskSecureRoles:
 
     def required_roles(self, project: str, roles: t.List[str]):
         """
-        Allows the request only if the `current_user` has `roles` in current project
-        :param str project: Project name to which the endpoint belongs to
-        :param List[str] roles: List of roles which all are required
+        Allows the request only if the `current_user` has all the `roles` required for the current project.
+        :param str project: The name of the project to which the endpoint belongs.
+        :param List[str] roles: A list of roles, all of which are required.
         """
 
         def decorator(f):
@@ -72,6 +72,56 @@ class FlaskSecureRoles:
                     project_name=project
                 )
                 if all([role in all_roles for role in roles]):
+                    valid = True
+                if valid:
+                    return f(*args, **kwargs)
+                else:
+                    return jsonify(error="Unauthorized"), 401
+
+            return decorated_function
+
+        return decorator
+
+    def any_role(self, project: str, roles: t.List[str]):
+        """
+        Allows the request only if the `current_user` has any of the specified `roles` within the current project.
+        :param str project: The name of the project to which the endpoint belongs.
+        :param List[str] roles: A list of roles that the user must have at least one of.
+        """
+
+        def decorator(f):
+            @wraps(f)
+            def decorated_function(*args, **kwargs):
+                valid = False
+                all_roles = current_user._get_current_object().roles(
+                    project_name=project
+                )
+                if any([role in all_roles for role in roles]):
+                    valid = True
+                if valid:
+                    return f(*args, **kwargs)
+                else:
+                    return jsonify(error="Unauthorized"), 401
+
+            return decorated_function
+
+        return decorator
+
+    def forbid_roles(self, project: str, roles: t.List[str]):
+        """
+        Allows the request only if the `current_user` does not have any of the specified `roles` within the current project.
+        :param str project: The name of the project to which the endpoint belongs.
+        :param List[str] roles: A list of roles that the user must not have.
+        """
+
+        def decorator(f):
+            @wraps(f)
+            def decorated_function(*args, **kwargs):
+                valid = False
+                all_roles = current_user._get_current_object().roles(
+                    project_name=project
+                )
+                if not any([role in all_roles for role in roles]):
                     valid = True
                 if valid:
                     return f(*args, **kwargs)

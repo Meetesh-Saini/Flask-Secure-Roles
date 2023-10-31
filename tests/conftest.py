@@ -19,10 +19,26 @@ def app_instance():
     # Initialize the extension
     fsr = FlaskSecureRoles(app)
 
-    # Define the route
+    # Define the routes
     @app.route("/role")
     @fsr.required_roles("hello", ["admin"])
     def roles_test():
+        return "works"
+
+    @app.route("/any-role")
+    @fsr.any_role("hello", ["admin", "pop"])
+    def any_roles_test():
+        return "works"
+
+    @app.route("/forbid-role")
+    @fsr.forbid_roles("hello", ["admin"])
+    def forbid_roles_test():
+        return "works"
+
+    @app.route("/mix-role")
+    @fsr.forbid_roles("hello", ["admin"])
+    @fsr.required_roles("hello", ["admin"])
+    def mix_roles_test():
         return "works"
 
     return app

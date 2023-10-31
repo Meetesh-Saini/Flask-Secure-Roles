@@ -85,7 +85,7 @@ def test_required_roles(
     app_instance: Flask, client: FlaskClient, db_session: scoped_session[Session]
 ):
     real_user = db_session.query(User).filter(User.name == "john").first()
-    fsr = app_instance.extensions["flask_secure_roles"]
+    fsr: FlaskSecureRoles = app_instance.extensions["flask_secure_roles"]
     # Set the user to john
     fsr.user_loader(real_user)
     resp = client.get("/role")
@@ -116,3 +116,60 @@ def test_required_roles(
 
     assert resp.status_code == 200
     assert resp.data == b"works"
+
+
+def test_any_roles(
+    app_instance: Flask, client: FlaskClient, db_session: scoped_session[Session]
+):
+    real_user = db_session.query(User).filter(User.name == "john").first()
+    fsr: FlaskSecureRoles = app_instance.extensions["flask_secure_roles"]
+    # Set the user to john
+    fsr.user_loader(real_user)
+    resp = client.get("/any-role")
+
+    assert resp.status_code == 200
+
+    # Set user to guest
+    fsr.user_loader(None)
+
+    resp = client.get("/any-role")
+
+    assert resp.status_code == 401
+
+
+def test_forbid_roles(
+    app_instance: Flask, client: FlaskClient, db_session: scoped_session[Session]
+):
+    real_user = db_session.query(User).filter(User.name == "john").first()
+    fsr: FlaskSecureRoles = app_instance.extensions["flask_secure_roles"]
+    # Set the user to john
+    fsr.user_loader(real_user)
+    resp = client.get("/forbid-role")
+
+    assert resp.status_code == 401
+
+    # Set user to guest
+    fsr.user_loader(None)
+
+    resp = client.get("/forbid-role")
+
+    assert resp.status_code == 200
+
+
+def test_mix_roles(
+    app_instance: Flask, client: FlaskClient, db_session: scoped_session[Session]
+):
+    real_user = db_session.query(User).filter(User.name == "john").first()
+    fsr: FlaskSecureRoles = app_instance.extensions["flask_secure_roles"]
+    # Set the user to john
+    fsr.user_loader(real_user)
+    resp = client.get("/mix-role")
+
+    assert resp.status_code == 401
+
+    # Set user to guest
+    fsr.user_loader(None)
+
+    resp = client.get("/mix-role")
+
+    assert resp.status_code == 401
