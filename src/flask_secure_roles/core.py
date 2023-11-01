@@ -68,10 +68,10 @@ class FlaskSecureRoles:
             @wraps(f)
             def decorated_function(*args, **kwargs):
                 valid = False
-                all_roles = current_user._get_current_object().roles(
-                    project_name=project
-                )
-                if all([role in all_roles for role in roles]):
+                all_roles = current_user.roles(project_name=project)
+                if project in current_user.projects() and all(
+                    [role in all_roles for role in roles]
+                ):
                     valid = True
                 if valid:
                     return f(*args, **kwargs)
@@ -93,10 +93,10 @@ class FlaskSecureRoles:
             @wraps(f)
             def decorated_function(*args, **kwargs):
                 valid = False
-                all_roles = current_user._get_current_object().roles(
-                    project_name=project
-                )
-                if any([role in all_roles for role in roles]):
+                all_roles = current_user.roles(project_name=project)
+                if project in current_user.projects() and any(
+                    [role in all_roles for role in roles]
+                ):
                     valid = True
                 if valid:
                     return f(*args, **kwargs)
@@ -118,10 +118,10 @@ class FlaskSecureRoles:
             @wraps(f)
             def decorated_function(*args, **kwargs):
                 valid = False
-                all_roles = current_user._get_current_object().roles(
-                    project_name=project
-                )
-                if not any([role in all_roles for role in roles]):
+                all_roles = current_user.roles(project_name=project)
+                if project in current_user.projects() and not any(
+                    [role in all_roles for role in roles]
+                ):
                     valid = True
                 if valid:
                     return f(*args, **kwargs)

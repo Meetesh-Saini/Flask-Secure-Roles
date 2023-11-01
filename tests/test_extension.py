@@ -153,7 +153,7 @@ def test_forbid_roles(
 
     resp = client.get("/forbid-role")
 
-    assert resp.status_code == 200
+    assert resp.status_code == 401
 
 
 def test_mix_roles(

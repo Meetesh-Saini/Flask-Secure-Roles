@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     author="Meetesh Saini",
     author_email="code.meeteshsaini@gmail.com",
-    description="Flask extension for RBAC (role base access control) using the jwt tokens",
+    description="Flask extension for RBAC (role base access control)",
     url="https://github.com/Meetesh-Saini/Flask-Secure-Roles",
     packages=find_packages(where="src"),
     package_dir={"": "src"},

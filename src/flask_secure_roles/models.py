@@ -65,6 +65,18 @@ class UserMixin:
                     roles_list.append(str(user_role.fsr_role.name()))
         return roles_list
 
+    def projects(self) -> t.List[str]:
+        """
+        Retrieve a list of projects associated with the user.
+
+        :return: A list of project names associated with the user.
+        :rtype: List[str]
+        """
+        project_list = []
+        for user_role in self.fsr_roles:
+            project_list.append(str(user_role.fsr_role.fsr_project.name()))
+        return project_list
+
 
 class RoleMixin:
     """
